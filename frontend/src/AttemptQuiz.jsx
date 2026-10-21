@@ -16,8 +16,8 @@ export default function AttemptQuiz() {
 
   // ✅ Get already attempted quizzes
   useEffect(() => {
-    getMyResults(username)
-      .then((res) => setAttemptedQuizIds(res.map((r) => r.quiz.id)))
+    getMyResults()
+      .then((res) => setAttemptedQuizIds(res.map((r) => r.quizId)))
       .catch((err) => console.error(err));
   }, [username]);
 

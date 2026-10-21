@@ -10,14 +10,14 @@ import java.util.List;
 
 public interface QuizResultRepository extends JpaRepository<QuizResult, Long> {
 
-    @Query("SELECT new com.example.demo.dto.QuizResultDTO(r.username, r.score, r.total, r.submittedAt, q.title, q.domain) " +
+    @Query("SELECT new com.example.demo.dto.QuizResultDTO(r.username, r.score, r.total, r.submittedAt, q.title, q.domain, q.id) " +
            "FROM QuizResult r JOIN r.quiz q WHERE r.username = :username")
     List<QuizResultDTO> findResultsByUsername(@Param("username") String username);
 
-    @Query("SELECT new com.example.demo.dto.QuizResultDTO(r.username, r.score, r.total, r.submittedAt, q.title, q.domain) " +
+    @Query("SELECT new com.example.demo.dto.QuizResultDTO(r.username, r.score, r.total, r.submittedAt, q.title, q.domain, q.id) " +
            "FROM QuizResult r JOIN r.quiz q WHERE q.id = :quizId")
     List<QuizResultDTO> findResultsByQuizId(@Param("quizId") Long quizId);
-    @Query("SELECT new com.example.demo.dto.QuizResultDTO(r.username, r.score, r.total, r.submittedAt, q.title, q.domain) " +
+    @Query("SELECT new com.example.demo.dto.QuizResultDTO(r.username, r.score, r.total, r.submittedAt, q.title, q.domain, q.id) " +
     	       "FROM QuizResult r JOIN r.quiz q ORDER BY r.submittedAt DESC")
     	List<QuizResultDTO> findAllResultsWithQuiz();
 

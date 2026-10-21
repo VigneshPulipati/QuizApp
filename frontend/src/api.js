@@ -1,74 +1,69 @@
 import axios from "axios";
-/*
 
-const USER_API_URL = "http://localhost:9096/api/users";
-const QUIZ_API_URL = "http://localhost:9096/api/quizzes";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:9096/api";
 
-/* ---------------- USER APIs ---------------- */
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
 
-// Signup
 export async function signup(data) {
-  const res = await axios.post(`${USER_API_URL}/signup`, data);
+  const res = await api.post("/users/signup", data);
   return res.data;
 }
 
-// Login
 export async function login(data) {
-  const res = await axios.post(`${USER_API_URL}/login`, data);
+  const res = await api.post("/users/login", data);
   return res.data;
 }
 
-// Get all users
+export async function logout() {
+  await api.post("/users/logout");
+}
+
 export async function getAllUsers() {
-  const res = await axios.get(`${USER_API_URL}/all`);
+  const res = await api.get("/users/all");
   return res.data;
 }
 
-/* ---------------- QUIZ APIs ---------------- */
-
-// Create Quiz
 export async function createQuiz(data) {
-  const res = await axios.post(QUIZ_API_URL, data);
+  const res = await api.post("/quizzes", data);
   return res.data;
 }
 
-// Get all quizzes
 export async function getAllQuizzes() {
-  const res = await axios.get(QUIZ_API_URL);
+  const res = await api.get("/quizzes");
   return res.data;
 }
 
-// Get quizzes created by current user
 export async function getMyQuizzes(username) {
-  const res = await axios.get(`${QUIZ_API_URL}/myquizzes/${username}`);
+  const res = await api.get(`/quizzes/myquizzes/${encodeURIComponent(username)}`);
   return res.data;
 }
 
-// Delete quiz
 export async function deleteQuiz(quizId) {
-  await axios.delete(`${QUIZ_API_URL}/${quizId}`);
+  await api.delete(`/quizzes/${quizId}`);
 }
 
-// Get one quiz (with questions)
 export async function getQuizById(id) {
-  const res = await axios.get(`${QUIZ_API_URL}/${id}`);
+  const res = await api.get(`/quizzes/${id}`);
   return res.data;
 }
 
-// ✅ Get quizzes by domain
 export async function getQuizzesByDomain(domain) {
-  const res = await axios.get(`${QUIZ_API_URL}/domain/${domain}`);
+  const res = await api.get(`/quizzes/domain/${encodeURIComponent(domain)}`);
   return res.data;
 }
 
-// Submit quiz answers
 export async function submitQuiz(id, submission) {
-  const res = await axios.post(`${QUIZ_API_URL}/${id}/submit`, submission);
+  const res = await api.post(`/quizzes/${id}/submit`, submission);
   return res.data;
 }
 
-// Get results of logged-in user
-export async function getMyResults(username) {
-  const res = await axios.get(`${QUIZ_API_URL}/results/user/${username}`);
+export async function getMyResults() {
+  const res = await api.get("/results/user");
   return res.data;
 }
+
+export default api;

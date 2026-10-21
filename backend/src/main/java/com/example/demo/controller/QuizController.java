@@ -4,105 +4,97 @@ import com.example.demo.dto.CreateQuizRequest;
 import com.example.demo.dto.QuizResponse;
 import com.example.demo.dto.QuizSubmission;
 import com.example.demo.dto.ScoreResponse;
-import com.example.demo.model.Question;
 import com.example.demo.model.Quiz;
-import com.example.demo.model.QuizResult;
+import com.example.demo.model.Users;
 import com.example.demo.service.QuizService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.example.demo.controller.UsersController.authenticatedUser;
+
 @RestController
 @RequestMapping("/api/quizzes")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"}, allowCredentials = "true")
 public class QuizController {
+    private final QuizService quizService;
 
-  private final QuizService quizService;
-
-  public QuizController(QuizService quizService) {
-    this.quizService = quizService;
-  }
-
-  // ✅ Create quiz
-  @PostMapping
-  public ResponseEntity<QuizResponse> createQuiz(@RequestBody CreateQuizRequest req) {
-    Quiz quiz = new Quiz();
-    quiz.setDomain(req.getDomain());
-    quiz.setTitle(req.getTitle());
-    quiz.setTimeLimit(req.getTimeLimit());
-    quiz.setCreatedBy(req.getCreatedBy()); // 👈 set creator
-
-    for (CreateQuizRequest.QuestionDto qdto : req.getQuestions()) {
-      Question q = new Question();
-      q.setText(qdto.getText());
-      q.setOptions(qdto.getOptions());
-      q.setAnswer(qdto.getAnswer());
-      quiz.addQuestion(q);
+    public QuizController(QuizService quizService) {
+        this.quizService = quizService;
     }
 
-    Quiz saved = quizService.createQuiz(req);   // ✅ delegate to service
-    return ResponseEntity.ok(quizService.toResponse(saved));
-  }
+    @PostMapping
+    public ResponseEntity<?> createQuiz(@Valid @RequestBody CreateQuizRequest request, HttpSession session) {
+        Users user = creator(session);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only logged-in creators can create quizzes.");
+        }
+        Quiz saved = quizService.createQuiz(request, user.getFullName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(quizService.toResponse(saved));
+    }
 
-  // ✅ Read all quizzes
-  @GetMapping
-  public List<QuizResponse> getAll() {
-    return quizService.getAll().stream()
-        .map(quizService::toResponse)
-        .toList();
-  }
+    @GetMapping
+    public List<QuizResponse> getAll() {
+        return quizService.getAll().stream().map(quizService::toResponse).toList();
+    }
 
-  // ✅ Read one quiz
-  @GetMapping("/{id}")
-  public QuizResponse getOne(@PathVariable Long id) {
-    return quizService.toResponse(quizService.getById(id));
-  }
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
+        Quiz quiz = quizService.getById(id);
+        return quiz == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(quizService.toResponse(quiz));
+    }
 
-  // ✅ Get quizzes by domain
-  @GetMapping("/domain/{domain}")
-  public List<Quiz> byDomain(@PathVariable String domain) {
-    return quizService.getByDomain(domain);
-  }
+    @GetMapping("/domain/{domain}")
+    public List<QuizResponse> byDomain(@PathVariable String domain) {
+        return quizService.getByDomain(domain).stream().map(quizService::toResponse).toList();
+    }
 
-  // ✅ Update quiz
-  @PutMapping("/{id}")
-  public Quiz update(@PathVariable Long id, @Valid @RequestBody CreateQuizRequest req) {
-    return quizService.updateQuiz(id, req);
-  }
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody CreateQuizRequest request,
+                                    HttpSession session) {
+        Users user = creator(session);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only logged-in creators can update quizzes.");
+        }
+        Quiz updated = quizService.updateQuiz(id, request, user.getFullName());
+        return updated == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(quizService.toResponse(updated));
+    }
 
-  // ✅ Delete quiz
-  @DeleteMapping("/{id}")
-  public void delete(@PathVariable Long id) {
-    quizService.deleteQuiz(id);
-  }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id, HttpSession session) {
+        Users user = creator(session);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only logged-in creators can delete quizzes.");
+        }
+        return quizService.deleteQuiz(id, user.getFullName())
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
+    }
 
-  // ✅ Submit answers & get score (also saves result in DB)
-//✅ Submit answers & get score (also saves result in DB)
-@PostMapping("/{id}/submit")
-public ScoreResponse submit(@PathVariable Long id, @RequestBody QuizSubmission submission) {
-   System.out.println("📥 Received submission: username=" + submission.getUsername());
-   System.out.println("📥 Answers=" + submission.getAnswers());
-   return quizService.score(id, submission);
-}
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<?> submit(@PathVariable Long id, @RequestBody QuizSubmission submission,
+                                    HttpSession session) {
+        Users user = authenticatedUser(session);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Please log in before attempting a quiz.");
+        }
+        submission.setUsername(user.getFullName());
+        ScoreResponse result = quizService.score(id, submission);
+        return result.getTotal() == 0 ? ResponseEntity.notFound().build() : ResponseEntity.ok(result);
+    }
 
+    @GetMapping("/myquizzes/{username}")
+    public List<QuizResponse> getMyQuizzes(@PathVariable String username, HttpSession session) {
+        Users user = authenticatedUser(session);
+        return user == null || !user.getFullName().equals(username) ? List.of() : quizService.getMyQuizzes(username);
+    }
 
-  // ✅ Get quizzes created by specific user
-  @GetMapping("/myquizzes/{username}")
-  public List<QuizResponse> getMyQuizzes(@PathVariable String username) {
-    return quizService.getMyQuizzes(username);
-  }
-
-//  // ✅ Get results by user
-//  @GetMapping("/results/user/{username}")
-//  public List<QuizResult> getResultsByUser(@PathVariable String username) {
-//    return quizService.getResultsByUser(username);
-//  }
-//
-//  // ✅ Get results by quiz
-//  @GetMapping("/results/quiz/{quizId}")
-//  public List<QuizResult> getResultsByQuiz(@PathVariable Long quizId) {
-//    return quizService.getResultsByQuiz(quizId);
-//  }
+    private Users creator(HttpSession session) {
+        Users user = authenticatedUser(session);
+        return user != null && "creator".equalsIgnoreCase(user.getRole()) ? user : null;
+    }
 }

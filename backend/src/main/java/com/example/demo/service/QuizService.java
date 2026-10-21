@@ -33,12 +33,12 @@ public class QuizService {
 
     // ✅ Create Quiz
     @Transactional
-    public Quiz createQuiz(CreateQuizRequest req) {
+    public Quiz createQuiz(CreateQuizRequest req, String creator) {
         Quiz quiz = new Quiz();
         quiz.setDomain(req.getDomain());
         quiz.setTitle(req.getTitle());
         quiz.setTimeLimit(req.getTimeLimit());
-        quiz.setCreatedBy(req.getCreatedBy());
+        quiz.setCreatedBy(creator);
 
         List<Question> qs = new ArrayList<>();
         for (CreateQuizRequest.QuestionDto qdto : req.getQuestions()) {
@@ -70,9 +70,9 @@ public class QuizService {
 
     // ✅ Update quiz
     @Transactional
-    public Quiz updateQuiz(Long id, CreateQuizRequest req) {
+    public Quiz updateQuiz(Long id, CreateQuizRequest req, String creator) {
         Quiz existing = quizRepository.findById(id).orElse(null);
-        if (existing == null) return null;
+        if (existing == null || !creator.equals(existing.getCreatedBy())) return null;
 
         existing.setDomain(req.getDomain());
         existing.setTitle(req.getTitle());
@@ -94,8 +94,11 @@ public class QuizService {
     }
 
     // ✅ Delete quiz
-    public void deleteQuiz(Long id) {
-        quizRepository.deleteById(id);
+    public boolean deleteQuiz(Long id, String creator) {
+        Quiz existing = quizRepository.findById(id).orElse(null);
+        if (existing == null || !creator.equals(existing.getCreatedBy())) return false;
+        quizRepository.delete(existing);
+        return true;
     }
 
     // ✅ Score quiz & Save result

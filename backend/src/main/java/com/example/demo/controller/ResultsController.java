@@ -1,36 +1,39 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.QuizResultDTO;
-import com.example.demo.model.QuizResult;
+import com.example.demo.model.Users;
 import com.example.demo.repository.QuizResultRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"}, allowCredentials = "true")
 @RestController
-@RequestMapping("/api/quizzes")
+@RequestMapping("/api/results")
 public class ResultsController {
+    private final QuizResultRepository quizResultRepository;
 
-    @Autowired
-    private QuizResultRepository quizResultRepository;
-
-    @GetMapping("/quiz-results/users/{username}")
-    public List<QuizResultDTO> getResultsByUsername(@PathVariable String username) {
-        return quizResultRepository.findResultsByUsername(username);
+    public ResultsController(QuizResultRepository quizResultRepository) {
+        this.quizResultRepository = quizResultRepository;
     }
 
-    @GetMapping("/quiz-results/{quizId}")
+    @GetMapping("/user")
+    public ResponseEntity<?> getResultsByUsername(HttpSession session) {
+        Users user = UsersController.authenticatedUser(session);
+        return user == null
+                ? ResponseEntity.status(401).body("Please log in to view results.")
+                : ResponseEntity.ok(quizResultRepository.findResultsByUsername(user.getFullName()));
+    }
+
+    @GetMapping("/quiz/{quizId}")
     public List<QuizResultDTO> getResultsByQuiz(@PathVariable Long quizId) {
         return quizResultRepository.findResultsByQuizId(quizId);
     }
- // ✅ Get all results (Admin view)
-    @GetMapping("/quiz-results")
+
+    @GetMapping
     public List<QuizResultDTO> getAllResults() {
         return quizResultRepository.findAllResultsWithQuiz();
     }
-
-
-
 }

@@ -1,6 +1,7 @@
 // ParticipantDashboard.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { logout } from "./api";
 import "./ParticipantDashboard.css";
 
 export default function ParticipantDashboard() {
@@ -8,7 +9,8 @@ export default function ParticipantDashboard() {
   const fullName = localStorage.getItem("fullName");
   const email = localStorage.getItem("email");
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout().catch(() => {});
     localStorage.clear();
     navigate("/");
   };

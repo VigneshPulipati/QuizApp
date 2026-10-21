@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { logout } from "./api";
 import "./CreatorDashboard.css";
 
 export default function CreatorDashboard() {
@@ -8,7 +9,8 @@ export default function CreatorDashboard() {
   const role = localStorage.getItem("role");
   const email = localStorage.getItem("email");
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout().catch(() => {});
     localStorage.clear();
     navigate("/");
   };

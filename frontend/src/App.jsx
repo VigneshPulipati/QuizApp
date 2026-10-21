@@ -6,10 +6,12 @@ import { useNavigate } from "react-router-dom";
 export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
 
     const data = {
       fullName: isSignup ? e.target[0].value : null,
@@ -24,12 +26,12 @@ export default function App() {
         const result = await signup(data); // result is user object
 
         if (result && result.id) {
-          alert("✅ Account created successfully!");
+          setMessage("Account created successfully. You can now sign in.");
           setShowModal(false);
           setIsSignup(false);
           navigate("/"); // redirect back to login modal
         } else {
-          alert("❌ Failed to create account");
+          setMessage("Failed to create account.");
         }
       } else {
         // ✅ Login flow
@@ -51,11 +53,11 @@ export default function App() {
             navigate("/participant");
           }
         } else {
-          alert("❌ Login failed");
+          setMessage("Login failed. Check your email and password.");
         }
       }
     } catch (error) {
-      alert("❌ Error: " + error.message);
+      setMessage(error.response?.data || "Unable to complete the request.");
     }
   };
 
@@ -86,6 +88,7 @@ export default function App() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2>{isSignup ? "Create Account" : "Sign In"}</h2>
+            {message && <p role="alert" className="form-message">{message}</p>}
             <form onSubmit={handleSubmit}>
               {isSignup && (
                 <>

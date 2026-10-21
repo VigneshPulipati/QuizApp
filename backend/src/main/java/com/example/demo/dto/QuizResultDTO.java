@@ -9,15 +9,17 @@ public class QuizResultDTO {
     private LocalDateTime submittedAt;
     private String quizTitle;
     private String quizDomain;
+    private Long quizId;
 
     public QuizResultDTO(String username, int score, int total,
-                         LocalDateTime submittedAt, String quizTitle, String quizDomain) {
+                         LocalDateTime submittedAt, String quizTitle, String quizDomain, Long quizId) {
         this.username = username;
         this.score = score;
         this.total = total;
         this.submittedAt = submittedAt;
         this.quizTitle = quizTitle;
         this.quizDomain = quizDomain;
+        this.quizId = quizId;
     }
 
     // Getters only
@@ -27,4 +29,5 @@ public class QuizResultDTO {
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public String getQuizTitle() { return quizTitle; }
     public String getQuizDomain() { return quizDomain; }
+    public Long getQuizId() { return quizId; }
 }

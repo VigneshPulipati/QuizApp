@@ -5,10 +5,12 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
   e.preventDefault();
+  setError("");
   try {
     const result = await login({ email, password }); // result is JSON object now
 
@@ -26,10 +28,10 @@ export default function Login() {
         navigate("/participant");
       }
     } else {
-      alert("❌ Invalid credentials");
+      setError("Invalid email or password.");
     }
   } catch (error) {
-    alert("❌ Error logging in: " + error.message);
+    setError(error.response?.data || "Unable to log in.");
   }
 };
 
@@ -37,6 +39,7 @@ export default function Login() {
   return (
     <div className="login-page">
       <h2>Login</h2>
+      {error && <p role="alert">{error}</p>}
       <form onSubmit={handleLogin}>
         <input
           type="email"
